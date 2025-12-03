@@ -1,0 +1,103 @@
+/* --- Cores Flamengo --- */
+:root {
+  --flamengo-red: #C00000;
+  --flamengo-black: #000000;
+  --flamengo-dark: #0A0A0A;
+  --text-white: #FFFFFF;
+  --text-gray: #CCCCCC;
+}
+
+/* Fundo geral do site */
+body {
+  background-color: var(--flamengo-dark);
+  color: var(--text-white);
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--flamengo-black) !important;
+  border-bottom: 3px solid var(--flamengo-red);
+}
+
+.navbar a,
+.navbar-brand,
+.nav-link {
+  color: var(--text-white) !important;
+  font-weight: 600;
+}
+
+.navbar a:hover {
+  color: var(--flamengo-red) !important;
+}
+
+/* Títulos principais */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--flamengo-red) !important;
+  font-weight: 700;
+}
+
+/* Título da página (campo post) */
+
+/* Links */
+a {
+  color: var(--flamengo-red);
+}
+
+a:hover {
+  color: #ff4d4d;
+}
+
+/* Cards das postagens */
+.quarto-post,
+.listing-item {
+  background: var(--flamengo-black);
+  border-left: 4px solid var(--flamengo-red);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 20px;
+  color: var(--text-white);
+}
+
+/* Títulos dos posts na listagem */
+.listing-title {
+  color: var(--text-white) !important;
+}
+
+/* Descrição dos posts */
+.listing-description {
+  color: var(--text-white) !important;
+}
+
+/* Datas e textos menores */
+.listing-date,
+.listing-author,
+.quarto-title-meta {
+  color: var(--text-white) !important;
+}
+
+/* Texto de conteúdo */
+p, li, div, span {
+  color: var(--text-white);
+}
+
+/* Table of contents */
+.toc {
+  color: var(--text-white);
+}
+
+/* Code blocks */
+code {
+  background-color: #1a1a1a;
+  color: var(--text-white);
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid var(--flamengo-red);
+  color: var(--text-white);
+}
+
+/* Ensure good readability for all text */
+* {
+  color: var(--text-white);
+}
