@@ -1,0 +1,1014 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>Reginaldo Esteves - Algoritmos</title>
+<link>https://ReginaldoEsteves.github.io/Reginaldo-blog/</link>
+<atom:link href="https://ReginaldoEsteves.github.io/Reginaldo-blog/index.xml" rel="self" type="application/rss+xml"/>
+<description>Trabalho Individual de Algoritmos</description>
+<generator>quarto-1.8.26</generator>
+<lastBuildDate>Wed, 03 Dec 2025 03:00:00 GMT</lastBuildDate>
+<item>
+  <title>Atividade 1 — Cotação do Dólar por Período</title>
+  <dc:creator>Reginaldo Esteves</dc:creator>
+  <link>https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade1/</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introdução" class="level1">
+<h1>Introdução</h1>
+<p>Esta atividade faz parte do Trabalho Individual da disciplina de Algoritmos.<br>
+O objetivo é desenvolver uma rotina que receba um parâmetro no formato <strong>“MMYYYY”</strong> e retorne um <strong>gráfico de linha</strong> com a variação da cotação do dólar no período informado.</p>
+<p>Para isso foi utilizada a API <strong>PTAX – Cotação do Dólar por Período</strong>, disponibilizada pelo Banco Central do Brasil:</p>
+<p>🔗 https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/swagger-ui3#/</p>
+<p>Cada aluno recebeu um mês e ano específicos.<br>
+Minha função transforma o valor recebido (ex.: <code>"102023"</code>) em:</p>
+<ul>
+<li><strong>Data inicial:</strong> primeiro dia do mês<br>
+</li>
+<li><strong>Data final:</strong> último dia do mês</li>
+</ul>
+<p>As datas são calculadas utilizando <code>datetime</code> e <code>calendar</code>.</p>
+<p>Além disso, a API não fornece cotação em <strong>finais de semana</strong> ou <strong>feriados</strong>.<br>
+Nestes casos, foi utilizada a cotação do <strong>dia útil anterior</strong>, conforme instrução da atividade.</p>
+<hr>
+</section>
+<section id="construção-da-função" class="level1">
+<h1>Construção da função</h1>
+<p>A função criada realiza os seguintes passos:</p>
+<ol type="1">
+<li>Recebe o parâmetro no formato <code>"MMYYYY"</code><br>
+</li>
+<li>Converte para uma data<br>
+</li>
+<li>Calcula o primeiro e último dia do mês<br>
+</li>
+<li>Monta a URL de consulta da API PTAX<br>
+</li>
+<li>Busca os valores de compra (<code>cotacaoCompra</code>)<br>
+</li>
+<li>Preenche fins de semana e feriados com o último valor válido<br>
+</li>
+<li>Gera um gráfico de linha utilizando <strong>Plotly</strong></li>
+</ol>
+<hr>
+</section>
+<section id="código-utilizado" class="level1">
+<h1>Código utilizado</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"></span>
+<span id="cb1-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> calendar</span>
+<span id="cb1-3"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> datetime <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> datetime, timedelta</span>
+<span id="cb1-4"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> pandas <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> pd</span>
+<span id="cb1-5"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> requests</span>
+<span id="cb1-6"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> plotly.graph_objects <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> go</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> mmYYYY_to_date(mmYYYY: <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">str</span>):</span>
+<span id="cb1-9">    first_date <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> datetime.strptime(mmYYYY, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"%m/%Y"</span>)</span>
+<span id="cb1-10">    last_day <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> calendar.monthrange(first_date.year, first_date.month)[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb1-11">    first <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> first_date.replace(day<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb1-12">    last <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> first_date.replace(day<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>last_day)</span>
+<span id="cb1-13">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> first.strftime(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"%m-</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%d</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">-%Y"</span>), last.strftime(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"%m-</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%d</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">-%Y"</span>), first, last</span>
+<span id="cb1-14"></span>
+<span id="cb1-15"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> fetch_cotacoes_bc(mmYYYY: <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">str</span>, moeda<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"USD"</span>):</span>
+<span id="cb1-16">    data_ini_str, data_fim_str, first_dt, last_dt <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> mmYYYY_to_date(mmYYYY)</span>
+<span id="cb1-17"></span>
+<span id="cb1-18">    base <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"</span></span>
+<span id="cb1-19">    endpoint <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)"</span></span>
+<span id="cb1-20">    params <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (</span>
+<span id="cb1-21">        <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"@moeda='</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>moeda<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'&amp;@dataInicial='</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>data_ini_str<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'&amp;@dataFinalCotacao='</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>data_fim_str<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'"</span></span>
+<span id="cb1-22">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"&amp;$top=10000&amp;$format=json&amp;$select=cotacaoCompra,dataHoraCotacao"</span></span>
+<span id="cb1-23">    )</span>
+<span id="cb1-24"></span>
+<span id="cb1-25">    url <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>base<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>endpoint<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">?</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>params<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb1-26">    resp <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> requests.get(url, timeout<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span>)</span>
+<span id="cb1-27">    resp.raise_for_status()</span>
+<span id="cb1-28"></span>
+<span id="cb1-29">    j <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> resp.json()</span>
+<span id="cb1-30"></span>
+<span id="cb1-31">    rows <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="cb1-32"></span>
+<span id="cb1-33">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> rec <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> j.get(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"value"</span>, []):</span>
+<span id="cb1-34">        dt <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> rec.get(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dataHoraCotacao"</span>)</span>
+<span id="cb1-35">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> dt <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>:</span>
+<span id="cb1-36">            <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">continue</span></span>
+<span id="cb1-37"></span>
+<span id="cb1-38">        date_only <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> datetime.fromisoformat(dt).date()</span>
+<span id="cb1-39">        rows.append({</span>
+<span id="cb1-40">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>: date_only,</span>
+<span id="cb1-41">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoCompra"</span>: <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">float</span>(rec.get(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoCompra"</span>))</span>
+<span id="cb1-42">        })</span>
+<span id="cb1-43"></span>
+<span id="cb1-44">    df <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.DataFrame(rows)</span>
+<span id="cb1-45"></span>
+<span id="cb1-46">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> df.empty:</span>
+<span id="cb1-47">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">raise</span> <span class="pp" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ValueError</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Nenhuma cotação retornada pela API para o período informado."</span>)</span>
+<span id="cb1-48"></span>
+<span id="cb1-49">    df <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> df.sort_values(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>).drop_duplicates(subset<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>, keep<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"last"</span>).reset_index(drop<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">True</span>)</span>
+<span id="cb1-50">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> df, first_dt.date(), last_dt.date()</span>
+<span id="cb1-51"></span>
+<span id="cb1-52"></span>
+<span id="cb1-53"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> build_full_month_series(df_cotacoes, first_date, last_date):</span>
+<span id="cb1-54"></span>
+<span id="cb1-55"></span>
+<span id="cb1-56">    all_dates <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.date_range(start<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>first_date, end<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>last_date, freq<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'D'</span>)</span>
+<span id="cb1-57"></span>
+<span id="cb1-58">    df_all <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.DataFrame({<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>: all_dates})</span>
+<span id="cb1-59"></span>
+<span id="cb1-60"></span>
+<span id="cb1-61">    df_cotacoes[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.to_datetime(df_cotacoes[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>])</span>
+<span id="cb1-62">    df_all[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.to_datetime(df_all[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>])</span>
+<span id="cb1-63"></span>
+<span id="cb1-64"></span>
+<span id="cb1-65">    df_all <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (</span>
+<span id="cb1-66">        df_all</span>
+<span id="cb1-67">        .merge(df_cotacoes, on<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>, how<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"left"</span>)</span>
+<span id="cb1-68">        .sort_values(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>)</span>
+<span id="cb1-69">    )</span>
+<span id="cb1-70"></span>
+<span id="cb1-71">    df_all[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoCompra"</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> df_all[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoCompra"</span>].ffill()</span>
+<span id="cb1-72"></span>
+<span id="cb1-73">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> df_all</span>
+<span id="cb1-74"></span>
+<span id="cb1-75"></span>
+<span id="cb1-76"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> plot_plotly(df_full, title<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cotação do Dólar - PTAX"</span>):</span>
+<span id="cb1-77">    fig <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> go.Figure()</span>
+<span id="cb1-78">    fig.add_trace(go.Scatter(x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>df_full[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"date"</span>], y<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>df_full[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoCompra"</span>], mode<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"lines+markers"</span>, name<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"PTAX (compra)"</span>))</span>
+<span id="cb1-79">    fig.update_layout(title<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>title, xaxis_title<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Data"</span>, yaxis_title<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cotação (R$)"</span>, hovermode<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"x unified"</span>)</span>
+<span id="cb1-80">    out_html <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grafico_dolar_mes.html"</span></span>
+<span id="cb1-81">    fig.write_html(out_html, include_plotlyjs<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'cdn'</span>)</span>
+<span id="cb1-82">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Gráfico salvo em: </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>out_html<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb1-83">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> fig</span>
+<span id="cb1-84"></span>
+<span id="cb1-85"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">__name__</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"__main__"</span>:</span>
+<span id="cb1-86">    mmYYYY <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">input</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Digite MMYYYY (ex: 102023): "</span>).strip()</span>
+<span id="cb1-87">    df_cot, first_date, last_date <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> fetch_cotacoes_bc(mmYYYY)</span>
+<span id="cb1-88">    df_full <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> build_full_month_series(df_cot, first_date, last_date)</span>
+<span id="cb1-89">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(df_full.head(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>))</span>
+<span id="cb1-90">    fig <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> plot_plotly(df_full, title<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Cotação do Dólar </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>mmYYYY<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb1-91">    fig.show()</span></code></pre></div></div>
+<p>Gráfico gerado</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade1/grafico.png" class="img-fluid figure-img"></p>
+<figcaption>Gráfico gerado</figcaption>
+</figure>
+</div>
+<p>Resultado no programa</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade1/prompt.png" class="img-fluid figure-img"></p>
+<figcaption>Prompt</figcaption>
+</figure>
+</div>
+<p>Conclusão</p>
+<p>Nesta atividade implementei uma função completa para obter e visualizar a cotação do dólar para um período específico, seguindo as etapas solicitadas:</p>
+<p>Tratamento da data no formato “MMYYYY”</p>
+<p>Construção das datas inicial e final</p>
+<p>Consumo da API PTAX</p>
+<p>Tratamento de dias sem cotação</p>
+<p>Geração de gráfico com Plotly</p>
+<p>O resultado final é um gráfico que permite visualizar claramente a variação do dólar no mês selecionado.</p>
+
+
+</section>
+
+ ]]></description>
+  <guid>https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade1/</guid>
+  <pubDate>Wed, 03 Dec 2025 03:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Atividade 2 — Monitoramento de Frota de Ônibus</title>
+  <dc:creator>Reginaldo Esteves</dc:creator>
+  <link>https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade2/</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introdução" class="level1">
+<h1>Introdução</h1>
+<p>Nesta atividade o objetivo foi construir um sistema de monitoramento de uma linha de ônibus utilizando:</p>
+<ul>
+<li>Pontos de parada da linha<br>
+</li>
+<li>Posição em tempo real dos ônibus<br>
+</li>
+<li>API pública Olho Vivo (SPTrans)<br>
+</li>
+<li>Visualização geográfica com <strong>Folium</strong></li>
+</ul>
+<p>O resultado final é um <strong>mapa interativo</strong>, contendo paradas (cor azul) e ônibus em movimento (vermelho).</p>
+<hr>
+</section>
+<section id="obtenção-do-token" class="level1">
+<h1>Obtenção do Token</h1>
+<p>Para acessar a API é necessário criar um cadastro e gerar um <strong>token de autenticação</strong>, fornecido pela SPTrans.</p>
+<p>Esse token é utilizado em todas as requisições.</p>
+<section id="exemplo-de-autenticação" class="level3">
+<h3 class="anchored" data-anchor-id="exemplo-de-autenticação">Exemplo de autenticação:</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Autenticação na API SPTrans</span></span>
+<span id="cb1-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> requests</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">TOKEN <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SEU_TOKEN_AQUI"</span>   <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Substituir pelo token real</span></span>
+<span id="cb1-5">BASE <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://api.olhovivo.sptrans.com.br/v2.1"</span></span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> autenticar():</span>
+<span id="cb1-8">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">"""Realiza autenticação obrigatória na API."""</span></span>
+<span id="cb1-9">    url <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>BASE<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/Login/Autenticar?token=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>TOKEN<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb1-10">    r <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> requests.post(url)</span>
+<span id="cb1-11">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> r.json()  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Retorna True/False</span></span></code></pre></div></div>
+<hr>
+</section>
+</section>
+<section id="obtendo-as-paradas-da-linha" class="level1">
+<h1>Obtendo as Paradas da Linha</h1>
+<p>Com o token válido, podemos consultar os pontos de parada de uma linha:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Obtendo todas as paradas da linha informada</span></span>
+<span id="cb2-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> requests</span>
+<span id="cb2-3"></span>
+<span id="cb2-4">TOKEN <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"SEU_TOKEN_AQUI"</span></span>
+<span id="cb2-5">linha <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"1234"</span>  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Exemplo de linha</span></span>
+<span id="cb2-6"></span>
+<span id="cb2-7">url_paradas <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (</span>
+<span id="cb2-8">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://api.olhovivo.sptrans.com.br/v2.1/parada/"</span></span>
+<span id="cb2-9">    <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"BuscarParadasPorLinha?token=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>TOKEN<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">&amp;codigoLinha=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>linha<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb2-10">)</span>
+<span id="cb2-11"></span>
+<span id="cb2-12">res <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> requests.get(url_paradas)</span>
+<span id="cb2-13">paradas <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> res.json()</span></code></pre></div></div>
+<p>Cada parada contém:</p>
+<ul>
+<li>Latitude</li>
+<li>Longitude</li>
+<li>Denominacao</li>
+</ul>
+<hr>
+</section>
+<section id="construindo-o-mapa-com-folium" class="level1">
+<h1>Construindo o Mapa com Folium</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"></span>
+<span id="cb3-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> folium</span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Centro inicial do mapa (primeira parada)</span></span>
+<span id="cb3-5">lat0 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> paradas[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Latitude"</span>]</span>
+<span id="cb3-6">lon0 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> paradas[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Longitude"</span>]</span>
+<span id="cb3-7"></span>
+<span id="cb3-8">mapa <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> folium.Map(location<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[lat0, lon0], zoom_start<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">13</span>)</span>
+<span id="cb3-9"></span>
+<span id="cb3-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Adicionando marcadores das paradas (azul)</span></span>
+<span id="cb3-11"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> p <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> paradas:</span>
+<span id="cb3-12">    folium.Marker(</span>
+<span id="cb3-13">        location<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[p[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Latitude"</span>], p[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Longitude"</span>]],</span>
+<span id="cb3-14">        popup<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>p[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Denominacao"</span>],</span>
+<span id="cb3-15">        icon<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>folium.Icon(color<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>)</span>
+<span id="cb3-16">    ).add_to(mapa)</span></code></pre></div></div>
+<hr>
+</section>
+<section id="obtendo-a-posição-atual-dos-ônibus" class="level1">
+<h1>Obtendo a Posição Atual dos Ônibus</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Requisição de veículos em tempo real</span></span>
+<span id="cb4-2">url_pos <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (</span>
+<span id="cb4-3">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://api.olhovivo.sptrans.com.br/v2.1/posicao?"</span></span>
+<span id="cb4-4">    <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"token=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>TOKEN<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">&amp;codigoLinha=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>linha<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb4-5">)</span>
+<span id="cb4-6"></span>
+<span id="cb4-7">res <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> requests.get(url_pos)</span>
+<span id="cb4-8">dados <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> res.json()</span>
+<span id="cb4-9"></span>
+<span id="cb4-10">onibus <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> dados.get(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"vs"</span>, [])  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Lista de veículos</span></span></code></pre></div></div>
+<p>Os veículos retornam:</p>
+<ul>
+<li>py → latitude</li>
+<li>px → longitude</li>
+</ul>
+<hr>
+</section>
+<section id="adicionando-ônibus-ao-mapa" class="level1">
+<h1>Adicionando Ônibus ao Mapa</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Marcadores dos ônibus (vermelho)</span></span>
+<span id="cb5-2"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> o <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> onibus:</span>
+<span id="cb5-3">    folium.Marker(</span>
+<span id="cb5-4">        location<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[o[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"py"</span>], o[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"px"</span>]],</span>
+<span id="cb5-5">        popup<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Ônibus em tempo real"</span>,</span>
+<span id="cb5-6">        icon<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>folium.Icon(color<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>)</span>
+<span id="cb5-7">    ).add_to(mapa)</span>
+<span id="cb5-8"></span>
+<span id="cb5-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Salvando o mapa</span></span>
+<span id="cb5-10">mapa.save(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"mapa_onibus.html"</span>)</span></code></pre></div></div>
+<hr>
+</section>
+<section id="resultado-final" class="level1">
+<h1>Resultado Final</h1>
+<div class="quarto-figure quarto-figure-center" style="display: block; margin: 0 auto;">
+<figure class="figure">
+<p><img src="https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade2/mapa_onibus.png" class="img-fluid figure-img" style="width:70.0%"></p>
+<figcaption>Mapa gerado da linha em tempo real</figcaption>
+</figure>
+</div>
+<p>Conclusão Nesta atividade foi desenvolvido um sistema completo para monitoramento de uma linha de ônibus da SPTrans, incluindo:</p>
+<p>Consulta de paradas</p>
+<p>Consulta de posição em tempo real dos ônibus</p>
+<p>Integração com API pública</p>
+<p>Exibição geográfica utilizando Folium</p>
+<p>Construção de um mapa interativo</p>
+<p>O trabalho demonstra o uso combinado de APIs, manipulação de dados e visualização em camadas.</p>
+
+
+</section>
+
+ ]]></description>
+  <guid>https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade2/</guid>
+  <pubDate>Wed, 03 Dec 2025 03:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Atividade 3 — Regressão Linear</title>
+  <dc:creator>Reginaldo Esteves</dc:creator>
+  <link>https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade3/</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="introdução" class="level1">
+<h1>Introdução</h1>
+<p>Nesta atividade devemos analisar a relação entre:</p>
+<ul>
+<li><strong>X:</strong> anos de estudo<br>
+</li>
+<li><strong>y:</strong> salário</li>
+</ul>
+<p>Os valores foram fornecidos em dois arquivos:</p>
+<ul>
+<li><code>X.txt</code><br>
+</li>
+<li><code>y.txt</code></li>
+</ul>
+<p>A tarefa inclui:</p>
+<ol type="1">
+<li>Ler os dados<br>
+</li>
+<li>Aplicar a <strong>fórmula matricial da regressão linear</strong><br>
+</li>
+<li>Calcular os coeficientes <strong>a</strong> (intercepto) e <strong>b</strong> (inclinação)<br>
+</li>
+<li>Plotar os pontos + reta ajustada usando <em>plotnine</em></li>
+</ol>
+<hr>
+</section>
+<section id="fórmula-matricial" class="level1">
+<h1>Fórmula Matricial</h1>
+<p>A regressão linear simples segue:</p>
+<p>[ = a + b x ]</p>
+<p>Com fórmula matricial:</p>
+<p>[ = (X^T X)^{-1} X^T y ]</p>
+<p>Onde:</p>
+<ul>
+<li><code>β[0] = a</code><br>
+</li>
+<li><code>β[1] = b</code></li>
+</ul>
+<hr>
+</section>
+<section id="leitura-dos-dados" class="level1">
+<h1>Leitura dos Dados</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"></span>
+<span id="cb1-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> numpy <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> np</span>
+<span id="cb1-3"></span>
+<span id="cb1-4">X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> np.loadtxt(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"X.txt"</span>)</span>
+<span id="cb1-5">y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> np.loadtxt(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"y.txt"</span>)</span>
+<span id="cb1-6">Montagem da Matriz</span>
+<span id="cb1-7">python</span>
+<span id="cb1-8">Copiar código</span>
+<span id="cb1-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Criação da matriz com coluna de 1s</span></span>
+<span id="cb1-10">X_mat <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> np.column_stack((np.ones(<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">len</span>(X)), X))</span>
+<span id="cb1-11"></span>
+<span id="cb1-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Fórmula matricial</span></span>
+<span id="cb1-13">beta <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> np.linalg.inv(X_mat.T <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> X_mat) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> X_mat.T <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">@</span> y</span>
+<span id="cb1-14"></span>
+<span id="cb1-15">a, b <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> beta[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>], beta[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb1-16">Gerando Gráfico com a Reta</span>
+<span id="cb1-17">python</span>
+<span id="cb1-18">Copiar código</span>
+<span id="cb1-19"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> plotnine <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> (</span>
+<span id="cb1-20">  ggplot, aes, geom_point, geom_abline</span>
+<span id="cb1-21">)</span>
+<span id="cb1-22"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> pandas <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> pd</span>
+<span id="cb1-23"></span>
+<span id="cb1-24">df <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.DataFrame({<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"x"</span>: X, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"y"</span>: y})</span>
+<span id="cb1-25"></span>
+<span id="cb1-26">plot <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (</span>
+<span id="cb1-27">  ggplot(df, aes(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"x"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"y"</span>))</span>
+<span id="cb1-28">  <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> geom_point()</span>
+<span id="cb1-29">  <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> geom_abline(intercept<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>a, slope<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>b)</span>
+<span id="cb1-30">)</span>
+<span id="cb1-31"></span>
+<span id="cb1-32">plot.save(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grafico_regressao.png"</span>)</span></code></pre></div></div>
+<p>Gráfico Gerado <img src="https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade3/image.png" class="img-fluid" alt="Gráfico"></p>
+<p>Conclusão Nesta atividade:</p>
+<p>Li os dados X e y fornecidos</p>
+<p>Apliquei a fórmula matricial da regressão linear</p>
+<p>Calculei os coeficientes a e b</p>
+<p>Modelei a relação entre anos de estudo e salário</p>
+<p>Construí o gráfico da regressão usando plotnine</p>
+<p>O resultado mostra claramente a tendência de aumento salarial conforme aumentam os anos de estudo.</p>
+
+
+</section>
+
+ ]]></description>
+  <guid>https://ReginaldoEsteves.github.io/Reginaldo-blog/posts/atividade3/</guid>
+  <pubDate>Wed, 03 Dec 2025 03:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
